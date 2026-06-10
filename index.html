@@ -2369,13 +2369,7 @@ function ghPull() {
   .catch(function(e) { ghStatus('Error: '+e.message, 'err'); });
 }
 
-// Hook auto-sync into saveToLS
-var _origSaveForGH = saveToLS;
-saveToLS = function() {
-  _origSaveForGH();
-  var s = ghGetSettings();
-  if (s.autoSync && s.token) ghPush(true);
-};
+// GitHub auto-sync is handled in the consolidated wrapper below
 
 // Panel toggle
 document.getElementById('btn-gh-sync').addEventListener('click', function() {
@@ -2628,7 +2622,15 @@ function checkUnsaved() {
 }
 // Hook into saveToLS to mark as saved
 var _origSave = saveToLS;
-saveToLS = function() { _origSave(); markSaved(); };
+saveToLS = function() {
+  _origSave();
+  markSaved();
+  // GitHub auto-sync
+  try {
+    var ghS = ghGetSettings();
+    if (ghS && ghS.autoSync && ghS.token && ghS.user && ghS.repo) ghPush(true);
+  } catch(e) {}
+};
 // Also hook into setTk and setSt to show banner on any change
 var _origSetTk = setTk;
 setTk = function(ds,p,t,k,v){ _origSetTk(ds,p,t,k,v); checkUnsaved(); };
